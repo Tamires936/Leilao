@@ -1,3 +1,5 @@
+package View;
+
 
 import Leilao.ProdutosDTO;
 import Leilao.ProdutosDAO;
@@ -7,6 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
@@ -21,12 +25,16 @@ import javax.swing.table.DefaultTableModel;
  */
 public class listagemVIEW extends javax.swing.JFrame {
 
-    /**
-     * Creates new form listagemVIEW
-     */
+   ProdutosDTO DTO;
+    Connection conn;    
+    
+    private PreparedStatement st;
+    private ResultSet rs;
+
     public listagemVIEW() {
         initComponents();
         listarProdutos();
+ 
     }
 
     /**
@@ -46,7 +54,7 @@ public class listagemVIEW extends javax.swing.JFrame {
         id_produto_venda = new javax.swing.JTextPane();
         btnVender = new javax.swing.JButton();
         jSeparator1 = new javax.swing.JSeparator();
-        btnVendas = new javax.swing.JButton();
+        btnPesquisar = new javax.swing.JButton();
         btnVoltar = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -79,10 +87,10 @@ public class listagemVIEW extends javax.swing.JFrame {
             }
         });
 
-        btnVendas.setText("Consultar Vendas");
-        btnVendas.addActionListener(new java.awt.event.ActionListener() {
+        btnPesquisar.setText("Consultar Vendas");
+        btnPesquisar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnVendasActionPerformed(evt);
+                btnPesquisarActionPerformed(evt);
             }
         });
 
@@ -97,27 +105,27 @@ public class listagemVIEW extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(47, 47, 47)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel2)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnVender))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addGroup(layout.createSequentialGroup()
-                            .addComponent(btnVoltar)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(btnVendas, javax.swing.GroupLayout.PREFERRED_SIZE, 168, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 440, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(49, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel1)
                 .addGap(193, 193, 193))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(32, 32, 32)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(btnVoltar, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(254, 254, 254)
+                        .addComponent(btnPesquisar))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                            .addComponent(jLabel2)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(btnVender))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 440, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(49, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -135,7 +143,7 @@ public class listagemVIEW extends javax.swing.JFrame {
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 67, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnVendas)
+                    .addComponent(btnPesquisar)
                     .addComponent(btnVoltar))
                 .addGap(17, 17, 17))
         );
@@ -144,18 +152,22 @@ public class listagemVIEW extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnVenderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVenderActionPerformed
-        String id = id_produto_venda.getText();
-        
-        ProdutosDAO produtosdao = new ProdutosDAO();
-        
-    //   produtosdao.venderProduto(Integer.parseInt(id));
-     //   listarProdutos();
+         try {
+            alteraStatus();
+            consultaIDprodt();
+        } catch (SQLException ex) {
+            Logger.getLogger(listagemVIEW.class.getName()).log(Level.SEVERE, null, ex);
+        }
+       listarProdutos();
     }//GEN-LAST:event_btnVenderActionPerformed
 
-    private void btnVendasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVendasActionPerformed
-     //   listagemVIEW vendas = new listagemVIEW(); 
-    //    vendas.setVisible(true);
-    }//GEN-LAST:event_btnVendasActionPerformed
+    private void btnPesquisarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPesquisarActionPerformed
+        vendasVIEW vendas = new vendasVIEW(); 
+        this.dispose();
+        vendas.setVisible(true);
+                
+        
+    }//GEN-LAST:event_btnPesquisarActionPerformed
 
     private void btnVoltarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVoltarActionPerformed
         this.dispose();
@@ -197,7 +209,7 @@ public class listagemVIEW extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnVendas;
+    private javax.swing.JButton btnPesquisar;
     private javax.swing.JButton btnVender;
     private javax.swing.JButton btnVoltar;
     private javax.swing.JTextPane id_produto_venda;
@@ -211,7 +223,6 @@ public class listagemVIEW extends javax.swing.JFrame {
 
      public void listarProdutos(){
                 
-        Connection conn = null;
         PreparedStatement st;
         ResultSet rs = null;
         DefaultTableModel modelo = (DefaultTableModel) listaProdutos.getModel();
@@ -231,6 +242,111 @@ public class listagemVIEW extends javax.swing.JFrame {
         }catch(SQLException e){
             JOptionPane.showMessageDialog(null, "Erro na conexão: "+e.getMessage());
         }
+     
+    }
+     public void consultaIDprodt(){
+        
+        int idProduto = Integer.parseInt(id_produto_venda.getText());
+                 
+        PreparedStatement st;
+        ResultSet rs;
+        
+        try{
+            
+             conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/leiloes_tdsat", "root", "826390T98#10t11");
+  
+           ProdutosDAO produtosdao = new ProdutosDAO();
+            boolean status; 
+           
+            status = produtosdao.connectDB();
+            
+            st = conn.prepareStatement("select * from produtos WHERE id = ?");
+            st.setInt(1, idProduto);
+            rs = st.executeQuery();
+            
+            DefaultTableModel  model = (DefaultTableModel) listaProdutos.getModel();   
+            model.setNumRows(0);
+            
+            while(rs.next()){
+                model.addRow(new Object[]{
+                rs.getString("id"),
+                rs.getString("nome"),
+                rs.getString("valor"), 
+                rs.getString("status")
+                });
+            }
+            
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+                
+    }
+    public void listaODBC(){
+        
+        
+        try{
+            
+           conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/leiloes_tdsat", "root", "826390T98#10t11");
+
+             PreparedStatement prep;
+             ProdutosDAO produtosdao = new ProdutosDAO();
+             boolean status; 
+                         
+             status = produtosdao.connectDB();
+              PreparedStatement st;
+     
+             st = conn.prepareStatement("select * from produtos");
+            ResultSet rs = st.executeQuery();
+            
+            DefaultTableModel  model = (DefaultTableModel) listaProdutos.getModel();   
+            model.setNumRows(0);
+            
+            while(rs.next()){
+                model.addRow(new Object[]{
+                rs.getString("id"),
+                rs.getString("nome"),
+                rs.getString("valor"), 
+                rs.getString("status")
+                });
+            }
+            rs.close();
+            conn.close();
+            
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+    
+    public void alteraStatus() throws SQLException{
+        
+        int idProduto = Integer.parseInt(id_produto_venda.getText());
+        
+        ProdutosDAO produtosdao = new ProdutosDAO();
+         boolean status; 
+        status = produtosdao.connectDB();
+         PreparedStatement st;
+
+        
+        PreparedStatement ps = null;
+        String sql = "Update produtos set status = 'Vendido' where id = ?";
+         conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/leiloes_tdsat", "root", "826390T98#10t11");
+
+
+        try {
+            ps = conn.prepareStatement(sql);
+            ps.setInt(1,idProduto);
+            ps.executeUpdate();
+
+            JOptionPane.showMessageDialog(null,"Dados atualizados com sucesso");
+            
+            ps.close();
+            conn.close();
+            
+        } catch ( SQLException sqle ) {
+            JOptionPane.showMessageDialog(null,"Erro ao tentar inserir dados");
+        }
+        
      }
 }
+
 
